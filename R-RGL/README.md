@@ -12,6 +12,7 @@ ghcr.io/7konigsberg/rgl-test:latest
 
 - `R 4.5.1` from `rocker/r-ver`
 - `rgl` built from source
+- Connectome Workbench at `/opt/workbench/bin_rh_linux64/wb_command`
 - `xvfb`
 - Mesa / X11 libraries for software OpenGL rendering
 - `bash` shell from the base image
@@ -58,29 +59,11 @@ module load apptainer
 apptainer shell --cleanenv --containall --pwd / rgl-test.sif
 ```
 
-## Install Extra R Packages
+## Add Extra R Packages
 
-The `.sif` image is read-only. If you need extra packages, bind only a specific library directory instead of your whole home directory:
+This image is intended to carry its own runtime R package set. If the lab needs more packages, add them to the Dockerfile and rebuild the image rather than binding an external R library from the host.
 
-```bash
-mkdir -p ~/R/container-lib
-
-apptainer exec --cleanenv --containall --pwd / \
-  -B $HOME/R/container-lib:/r-lib \
-  rgl-test.sif \
-  R --vanilla -q -e ".libPaths(c('/r-lib', .libPaths())); install.packages(c('devtools'), repos='https://cloud.r-project.org')"
-```
-
-Check the library paths:
-
-```bash
-apptainer exec --cleanenv --containall --pwd / \
-  -B $HOME/R/container-lib:/r-lib \
-  rgl-test.sif \
-  R --vanilla -q -e ".libPaths(c('/r-lib', .libPaths())); print(.libPaths())"
-```
-
-## `devtools::load_all()`
+## `pkgload::load_all()`
 
 Bind your source tree into the container, then load it from the bound path:
 
@@ -89,17 +72,17 @@ module load apptainer
 
 apptainer exec --cleanenv --containall --pwd / \
   -B $HOME/Documents/Github:/work \
-  -B $HOME/R/container-lib:/r-lib \
   rgl-test.sif \
   xvfb-run -s "-screen 0 1024x768x24" \
-  R --vanilla -q -e ".libPaths(c('/r-lib', .libPaths())); devtools::load_all('/work/YOUR_PACKAGE')"
+  R --vanilla -q -e "pkgload::load_all('/work/YOUR_PACKAGE')"
 ```
 
 Notes:
 
 - replace `YOUR_PACKAGE` with the directory name of the package
-- install `devtools` into `~/R/container-lib` first if needed
+- `pkgload` and the `ciftiTools` import set are already baked into the image, so `ciftiTools` can be loaded from source without interactive installs
 - `xvfb-run` is only necessary if the package or script actually opens `rgl`
+- for `ciftiTools` development, do not install `ciftiTools` in the image; bind the repo and use `pkgload::load_all()`
 
 ## Run An R Script
 
@@ -114,6 +97,23 @@ apptainer exec --cleanenv --containall --pwd / \
   xvfb-run -s "-screen 0 1024x768x24" \
   Rscript --vanilla /work/YOUR_PACKAGE/path/to/script.R
 ```
+
+Example in this folder:
+
+```bash
+module load apptainer
+
+apptainer exec --cleanenv --containall --pwd / \
+  -B $HOME/Documents/Github:/work \
+  rgl-test.sif \
+  xvfb-run -s "-screen 0 1024x768x24" \
+  Rscript --vanilla -e "source('/work/hpc-container/hpc-containers/R-RGL/example_script.R')"
+```
+
+This example script does two things internally:
+
+- loads the bound `ciftiTools` source tree from `/work/ciftiTools`
+- sets `wb_path` to the bundled container Workbench at `/opt/workbench/bin_rh_linux64/wb_command`
 
 If the script does not touch `rgl`, drop `xvfb-run`:
 
