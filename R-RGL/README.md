@@ -103,17 +103,21 @@ Example in this folder:
 ```bash
 module load apptainer
 
-apptainer exec --cleanenv --containall --pwd / \
-  -B $HOME/Documents/Github:/work \
-  rgl-test.sif \
+mkdir -p $HOME/Documents/Github/hpc-containers/R-RGL/out
+
+apptainer exec --cleanenv --containall --pwd /work/hpc-containers/R-RGL/out \
+  -B $HOME/Documents/Github/hpc-containers:/work/hpc-containers \
+  -B $HOME/Documents/Github/ciftiTools:/work/ciftiTools \
+  $HOME/rgl-test.sif \
   xvfb-run -s "-screen 0 1024x768x24" \
-  Rscript --vanilla -e "source('/work/hpc-container/hpc-containers/R-RGL/example_script.R')"
+  Rscript --vanilla -e "source('/work/hpc-containers/R-RGL/example_script.R')"
 ```
 
 This example script does two things internally:
 
 - loads the bound `ciftiTools` source tree from `/work/ciftiTools`
 - sets `wb_path` to the bundled container Workbench at `/opt/workbench/bin_rh_linux64/wb_command`
+- writes `ciftitools_example.png` into the working directory, so the command above sets `--pwd` to the bound writable folder `/work/hpc-containers/R-RGL/out`
 
 If the script does not touch `rgl`, drop `xvfb-run`:
 
