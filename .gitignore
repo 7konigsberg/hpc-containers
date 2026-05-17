@@ -1,0 +1,5 @@
+R-RGL/r-lib/
+R-RGL/out/
+R-RGL/build-rgl-workbench.log
+R-RGL/*.png
+R-RGL/workbench/*.zip
