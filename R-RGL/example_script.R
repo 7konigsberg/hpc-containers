@@ -1,8 +1,4 @@
-pkgload::load_all("/work/ciftiTools", quiet = FALSE)
-
-if (!file.exists("/opt/workbench/bin_rh_linux64/wb_command")) {
-  stop("Expected bundled Workbench at /opt/workbench/bin_rh_linux64/wb_command")
-}
+devtools::load_all("~/Documents/Github/ciftiTools", quiet = FALSE)
 
 ciftiTools.setOption("wb_path", "/opt/workbench/bin_rh_linux64/wb_command")
 

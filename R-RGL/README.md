@@ -63,26 +63,26 @@ apptainer shell --cleanenv --containall --pwd / rgl-test.sif
 
 This image is intended to carry its own runtime R package set. If the lab needs more packages, add them to the Dockerfile and rebuild the image rather than binding an external R library from the host.
 
-## `pkgload::load_all()`
+## `devtools::load_all()`
 
-Bind your source tree into the container, then load it from the bound path:
+Bind `~/Documents/Github` into the same path inside the container so the source-tree paths match what you use on the host:
 
 ```bash
 module load apptainer
 
 apptainer exec --cleanenv --containall --pwd / \
-  -B $HOME/Documents/Github:/work \
+  -B $HOME/Documents/Github:$HOME/Documents/Github \
   rgl-test.sif \
   xvfb-run -s "-screen 0 1024x768x24" \
-  R --vanilla -q -e "pkgload::load_all('/work/YOUR_PACKAGE')"
+  R --vanilla -q -e "devtools::load_all('~/Documents/Github/YOUR_PACKAGE')"
 ```
 
 Notes:
 
 - replace `YOUR_PACKAGE` with the directory name of the package
-- `pkgload` and the `ciftiTools` import set are already baked into the image, so `ciftiTools` can be loaded from source without interactive installs
+- `devtools` and the `ciftiTools` import set are baked into the image, so `ciftiTools` can be loaded from source without interactive installs
 - `xvfb-run` is only necessary if the package or script actually opens `rgl`
-- for `ciftiTools` development, do not install `ciftiTools` in the image; bind the repo and use `pkgload::load_all()`
+- for `ciftiTools` development, do not install `ciftiTools` in the image; bind `~/Documents/Github` and use `devtools::load_all()`
 
 ## Run An R Script
 
@@ -92,10 +92,10 @@ If the script needs `rgl` rendering:
 module load apptainer
 
 apptainer exec --cleanenv --containall --pwd / \
-  -B $HOME/Documents/Github:/work \
+  -B $HOME/Documents/Github:$HOME/Documents/Github \
   rgl-test.sif \
   xvfb-run -s "-screen 0 1024x768x24" \
-  Rscript --vanilla /work/YOUR_PACKAGE/path/to/script.R
+  Rscript --vanilla ~/Documents/Github/YOUR_PACKAGE/path/to/script.R
 ```
 
 Example in this folder:
@@ -105,19 +105,18 @@ module load apptainer
 
 mkdir -p $HOME/Documents/Github/hpc-containers/R-RGL/out
 
-apptainer exec --cleanenv --containall --pwd /work/hpc-containers/R-RGL/out \
-  -B $HOME/Documents/Github/hpc-containers:/work/hpc-containers \
-  -B $HOME/Documents/Github/ciftiTools:/work/ciftiTools \
+apptainer exec --cleanenv --containall --pwd $HOME/Documents/Github/hpc-containers/R-RGL/out \
+  -B $HOME/Documents/Github:$HOME/Documents/Github \
   $HOME/rgl-test.sif \
   xvfb-run -s "-screen 0 1024x768x24" \
-  Rscript --vanilla -e "source('/work/hpc-containers/R-RGL/example_script.R')"
+  Rscript --vanilla -e "source('~/Documents/Github/hpc-containers/R-RGL/example_script.R')"
 ```
 
 This example script does two things internally:
 
-- loads the bound `ciftiTools` source tree from `/work/ciftiTools`
+- loads the bound `ciftiTools` source tree from `~/Documents/Github/ciftiTools`
 - sets `wb_path` to the bundled container Workbench at `/opt/workbench/bin_rh_linux64/wb_command`
-- writes `ciftitools_example.png` into the working directory, so the command above sets `--pwd` to the bound writable folder `/work/hpc-containers/R-RGL/out`
+- writes `ciftitools_example.png` into the working directory, so the command above sets `--pwd` to the bound writable folder `~/Documents/Github/hpc-containers/R-RGL/out`
 
 If the script does not touch `rgl`, drop `xvfb-run`:
 
@@ -125,9 +124,9 @@ If the script does not touch `rgl`, drop `xvfb-run`:
 module load apptainer
 
 apptainer exec --cleanenv --containall --pwd / \
-  -B $HOME/Documents/Github:/work \
+  -B $HOME/Documents/Github:$HOME/Documents/Github \
   rgl-test.sif \
-  Rscript --vanilla /work/YOUR_PACKAGE/path/to/script.R
+  Rscript --vanilla ~/Documents/Github/YOUR_PACKAGE/path/to/script.R
 ```
 
 ## Notes
@@ -135,3 +134,4 @@ apptainer exec --cleanenv --containall --pwd / \
 - `bash` is available in the image.
 - The public GHCR image can be pulled without authentication.
 - Apptainer bind-mounts host paths by default. This README avoids that by using `--cleanenv --containall` and binding only the directories you explicitly need.
+- Do not pass `--env HOME=$HOME` to Apptainer here; with `--containall` it warns that overriding `HOME` is not permitted, and it is unnecessary for this workflow.
