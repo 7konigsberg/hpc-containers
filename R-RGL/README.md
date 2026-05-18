@@ -98,7 +98,9 @@ apptainer exec --cleanenv --containall --pwd / \
   Rscript --vanilla ~/Documents/Github/YOUR_PACKAGE/path/to/script.R
 ```
 
-Example in this folder:
+## Example: Render A ciftiTools PNG On HPC
+
+This is the main end-to-end test for the image.
 
 ```bash
 module load apptainer
